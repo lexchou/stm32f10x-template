@@ -1,0 +1,12 @@
+#!/usr/bin/kermit
+set line /dev/ttyUSB0
+set speed 115200
+set stop-bits 1
+set carrier-watch off
+set handshake none
+set flow-control none
+set parity none
+robust
+set window 5
+connect
+

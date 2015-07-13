@@ -1,0 +1,73 @@
+#!/bin/bash
+
+check_port() {
+nc -z localhost 4444
+R=$?
+if [[ $R -eq 1 ]];then
+    echo "ERROR: OpenOCD is not running"
+    exit 1
+fi
+}
+
+burn() {
+check_port
+if [[ "$1" == "" ]];then
+    echo "Usage: stm32 burn file_name"
+    exit
+fi
+file=$PWD/$1
+
+if [[ ! -r "$file" ]];then
+    echo "Binary file $1 cannot be opened."
+    exit 1
+fi
+nc localhost 4444 <<EOF
+halt
+poll
+flash probe 0
+stm32f1x mass_erase 0
+flash write_bank 0 "$file" 0
+reset halt
+exit
+EOF
+}
+reset() {
+check_port
+nc localhost 4444 <<EOF
+reset
+exit
+EOF
+}
+
+gdb() {
+check_port
+if [[ "$1" == "" ]];then
+    echo "Usage: stm32 gdb file_name"
+    exit
+fi
+
+if [[ ! -r "$1" ]];then
+    echo "Cannot find ELF $1"
+    exit 1
+fi
+arm-none-eabi-gdbtui --eval-command="target remote localhost:3333" "$1"
+}
+
+
+
+
+case "$1" in
+    gdb)
+        gdb "$2"
+        ;;
+    burn)
+        burn "$2"
+        ;;
+    reset)
+        reset
+        ;;
+    *)
+        echo $"Usage: $0 jlink|gdb|burn|reset"
+esac
+
+
